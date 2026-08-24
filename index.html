@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ff6b4a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="우리집 냉장고">
+  <meta name="description" content="용현님과 옥화님이 함께 쓰는 냉장고 재료 관리와 매일 오후 3시 레시피 푸시 알림 앱">
+  <title>우리집 냉장고</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    * { font-family:'Noto Sans KR',sans-serif; -webkit-tap-highlight-color:transparent; }
+    body { background:linear-gradient(135deg,#fff7ed 0%,#fff1f2 100%); min-height:100vh; }
+    .phone-frame { max-width:430px; margin:0 auto; min-height:100vh; background:#fafafa; box-shadow:0 0 40px rgba(0,0,0,.12); position:relative; padding-bottom:calc(82px + env(safe-area-inset-bottom)); }
+    .user-tab { transition:.25s; }
+    .user-tab.active { background:linear-gradient(135deg,#ff6b4a,#f43f5e); color:white; box-shadow:0 4px 14px rgba(244,63,94,.35); }
+    .tab-btn { transition:.2s; }
+    .tab-btn.active { color:#f43f5e; background:#fff1f2; }
+    .fade-in { animation:fadeIn .28s ease; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+    .badge-fresh { background:#dcfce7; color:#166534; }
+    .badge-warning { background:#fef3c7; color:#92400e; }
+    .badge-danger { background:#fee2e2; color:#991b1b; }
+    .recipe-card { transition:.25s; }
+    .recipe-card:active { transform:scale(.985); }
+    .modal-overlay { background:rgba(15,23,42,.55); backdrop-filter:blur(4px); }
+    .status-dot { animation:pulse 1.8s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:#fb7185;border-radius:99px}
+  </style>
+</head>
+<body>
+<div class="phone-frame">
+  <header class="bg-gradient-to-r from-orange-500 to-rose-500 text-white p-4 pt-[max(1rem,env(safe-area-inset-top))] sticky top-0 z-40 shadow-lg">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <h1 class="text-xl font-black flex items-center gap-2"><i class="fas fa-snowflake"></i> 우리집 냉장고</h1>
+        <p class="text-xs opacity-90 mt-0.5">용현 · 옥화의 레시피 알리미</p>
+      </div>
+      <div id="sync-status" class="flex items-center gap-1 bg-white/20 rounded-full px-2.5 py-1.5 text-[11px] whitespace-nowrap">
+        <span class="w-2 h-2 bg-yellow-200 rounded-full status-dot"></span><span>연결 확인 중</span>
+      </div>
+    </div>
+    <div class="mt-3 grid grid-cols-2 gap-2 bg-white/20 p-1 rounded-2xl">
+      <button onclick="switchUser('husband')" id="tab-husband" class="user-tab active py-2.5 rounded-xl text-sm font-bold">👨 남편 용현</button>
+      <button onclick="switchUser('wife')" id="tab-wife" class="user-tab py-2.5 rounded-xl text-sm font-bold">👩 아내 옥화</button>
+    </div>
+  </header>
+
+  <main id="app-content" class="p-4"></main>
+
+  <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t grid grid-cols-5 z-40 pb-[env(safe-area-inset-bottom)]">
+    <button onclick="showPage('fridge')" id="btn-fridge" class="tab-btn active py-3 text-[11px] text-gray-500"><i class="fas fa-box-open text-lg block mb-1"></i>냉장고</button>
+    <button onclick="showPage('add')" id="btn-add" class="tab-btn py-3 text-[11px] text-gray-500"><i class="fas fa-plus-circle text-lg block mb-1"></i>추가</button>
+    <button onclick="showPage('recipe')" id="btn-recipe" class="tab-btn py-3 text-[11px] text-gray-500"><i class="fas fa-utensils text-lg block mb-1"></i>레시피</button>
+    <button onclick="showPage('notify')" id="btn-notify" class="tab-btn py-3 text-[11px] text-gray-500"><i class="fas fa-bell text-lg block mb-1"></i>알림</button>
+    <button onclick="showPage('settings')" id="btn-settings" class="tab-btn py-3 text-[11px] text-gray-500"><i class="fas fa-gear text-lg block mb-1"></i>설정</button>
+  </nav>
+</div>
+
+<div id="modal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-sm w-full p-5 max-h-[88vh] overflow-y-auto shadow-2xl"></div>
+</div>
+<div id="toast-root"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
+<script src="./firebase-config.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
