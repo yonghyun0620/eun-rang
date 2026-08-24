@@ -85,7 +85,7 @@ async function sendTestPush() {
   const ok = await ensurePushPermission();
   if (!ok) return;
 
-     if (isFirebaseReady && messaging) {
+  if (isFirebaseReady && messaging) {
     const token = await subscribeFCM();
     showToast(token ? '✅ 푸시 토큰 등록 완료!' : '⚠️ 토큰 등록 실패 — 다시 시도해주세요');
   }
