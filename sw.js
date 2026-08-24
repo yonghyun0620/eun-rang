@@ -1,8 +1,8 @@
-/* 우리집 냉장고 — Service Worker (오프라인 캐시 + 푸시 알림 수신) */
 importScripts('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js');
+importScripts('./firebase-config.js');
 
-const CACHE = 'fridge-v1';
+const CACHE = 'fridge-v2';
 const ASSETS = ['./', './index.html', './app.js', './firebase-config.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {
@@ -30,11 +30,11 @@ self.addEventListener('fetch', (e) => {
 
 /* ---- Firebase 백그라운드 푸시 수신 (앱이 꺼져 있어도 알림 도착) ---- */
 try {
-  firebase.initializeApp(self.FIREBASE_CONFIG || { apiKey: 'DEMO', projectId: 'DEMO', messagingSenderId: 'DEMO', appId: 'DEMO' });
+  firebase.initializeApp(FIREBASE_CONFIG);
   const messaging = firebase.messaging();
   messaging.onBackgroundMessage((payload) => {
     const n = payload.notification || {};
-    self.registration.showNotification(n.title || '🍳 우리집 냉장고', {
+    return self.registration.showNotification(n.title || '🍳 우리집 냉장고', {
       body: n.body || '오늘의 추천 레시피가 도착했어요!',
       icon: './icon-192.png',
       badge: './icon-192.png',
@@ -43,14 +43,14 @@ try {
       data: { url: './index.html' }
     });
   });
-} catch (e) { /* 데모 모드: 무시 */ }
+} catch (e) { /* 설정 전이면 무시 */ }
 
-/* ---- 일반 푸시(비-Firebase 경로) 폴백 ---- */
+/* ---- 일반 푸시 폴백 ---- */
 self.addEventListener('push', (e) => {
   if (!e.data) return;
   let payload = {};
   try { payload = e.data.json(); } catch { payload = { body: e.data.text() }; }
-  if (payload.notification) return; // Firebase 메시지는 위에서 처리
+  if (payload.notification) return;
   e.waitUntil(
     self.registration.showNotification(payload.title || '🍳 우리집 냉장고', {
       body: payload.body || '오늘의 추천 레시피가 도착했어요!',
@@ -63,7 +63,7 @@ self.addEventListener('push', (e) => {
   );
 });
 
-/* 알림 클릭 시 앱 열기 */
+/* ---- 알림 클릭 시 앱 열기 ---- */
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   e.waitUntil(
