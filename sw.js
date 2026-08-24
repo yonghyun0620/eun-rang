@@ -42,7 +42,7 @@ try {
       data: { url: './index.html' }
     });
   });
-} catch (e) {}
+} catch (e) { /* 설정 전이면 무시 */ }
 
 /* 일반 푸시 폴백 */
 self.addEventListener('push', (e) => {
@@ -72,3 +72,4 @@ self.addEventListener('notificationclick', (e) => {
     })
   );
 });
+
