@@ -23,7 +23,7 @@ const FAMILY_ID = "our-fridge-2026";
 /* FCM 웹 푸시 인증 키
    (Firebase 콘솔 → 프로젝트 설정 → Cloud Messaging → 웹 푸시 인증서에서
     키 쌍 생성 후 여기에 붙여넣으세요. 생성 전까지는 "DEMO" 그대로 둬도 됩니다) */
-const VAPID_KEY = "DEMO";
+const VAPID_KEY = "BEw8wS-n3WFiLAV0LpmBTZd1BdpX8EbT94aHdoGmyIsv4XUS9RhGWp1Px8pwud1TBnGCjYb0AnsMI63a23HB2fg";
 
 /* ==========================================================================
    📋 Firestore 보안 규칙 (콘솔 → Firestore Database → 규칙 탭에 붙여넣기)
