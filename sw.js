@@ -2,7 +2,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js');
 importScripts('./firebase-config.js');
 
-const CACHE = 'fridge-v2';
+const CACHE = 'fridge-v3';
 const ASSETS = ['./', './index.html', './app.js', './firebase-config.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {
@@ -11,24 +11,23 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-  );
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))));
   self.clients.claim();
 });
 
+/* 네트워크 우선: 항상 최신 파일을 받고, 오프라인일 때만 캐시 사용 */
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+    fetch(e.request).then(res => {
       const clone = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, clone)).catch(() => {});
       return res;
-    }).catch(() => cached))
+    }).catch(() => caches.match(e.request))
   );
 });
 
-/* ---- Firebase 백그라운드 푸시 수신 (앱이 꺼져 있어도 알림 도착) ---- */
+/* Firebase 백그라운드 푸시 수신 */
 try {
   firebase.initializeApp(FIREBASE_CONFIG);
   const messaging = firebase.messaging();
@@ -43,9 +42,9 @@ try {
       data: { url: './index.html' }
     });
   });
-} catch (e) { /* 설정 전이면 무시 */ }
+} catch (e) {}
 
-/* ---- 일반 푸시 폴백 ---- */
+/* 일반 푸시 폴백 */
 self.addEventListener('push', (e) => {
   if (!e.data) return;
   let payload = {};
@@ -63,7 +62,7 @@ self.addEventListener('push', (e) => {
   );
 });
 
-/* ---- 알림 클릭 시 앱 열기 ---- */
+/* 알림 클릭 시 앱 열기 */
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   e.waitUntil(
