@@ -85,6 +85,12 @@ async function sendTestPush() {
   const ok = await ensurePushPermission();
   if (!ok) return;
 
+     if (isFirebaseReady && messaging) {
+    const token = await subscribeFCM();
+    showToast(token ? '✅ 푸시 토큰 등록 완료!' : '⚠️ 토큰 등록 실패 — 다시 시도해주세요');
+  }
+
+
   const priority = getPriorityItems();
   const top = generateRecipes(state.items)[0][0];
   const p = priority[0];
