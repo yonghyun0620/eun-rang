@@ -27,7 +27,7 @@ self.addEventListener('fetch', (e) => {
   );
 });
 
-/* Firebase 백그라운드 푸시 수신 */
+/* Firebase 백그라운드 푸시 수신 (앱이 꺼져 있어도 알림 도착) */
 try {
   firebase.initializeApp(FIREBASE_CONFIG);
   const messaging = firebase.messaging();
