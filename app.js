@@ -91,9 +91,14 @@ async function sendTestPush() {
     showToast('② Firebase 연결됨');
 
     if (!messaging) { showToast('❌ 이 브라우저는 FCM 미지원'); return; }
-    showToast('③ 토큰 발급 시도 중…');
+        showToast('③-1 서비스 워커 확인 중…');
 
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('서비스 워커가 8초 안에 준비되지 않음 — sw.js 파일에 오류가 있을 가능성이 큽니다')), 8000)),
+    ]);
+    showToast('③-2 서비스 워커 OK! 토큰 요청 중…');
+
     const token = await messaging.getToken({
       vapidKey: (typeof VAPID_KEY !== 'undefined' && VAPID_KEY !== 'DEMO') ? VAPID_KEY : undefined,
       serviceWorkerRegistration: reg,
